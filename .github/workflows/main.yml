@@ -1,0 +1,69 @@
+name: lb-infra
+
+on: workflow_dispatch
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  az-login-terraform-init-plan:
+    name: azloginplaninit
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout
+       uses: actions/checkout@v5.0.0
+
+     - name: Azure login
+       uses: azure/login@v2
+       with:
+          client-id: 6ce57f3b-b49b-47d0-b4d5-4d065ee8c696
+          tenant-id: b24a5be3-6852-43c6-b00e-086d16b535ab
+          subscription-id: 258a8e61-bb4a-4a2e-99d2-ca7211e4a421
+
+     - uses: hashicorp/setup-terraform@v3
+
+     - name: Terraform Init
+       id: init
+       run: terraform init -input=false
+       working-directory: ./env/dev
+    
+     - name: Terraform Validate
+       id: validate
+       working-directory: ./env/dev
+       run: terraform validate -no-color
+    
+     - name: Terraform Plan
+       id: plan
+       working-directory: ./env/dev
+       run: terraform plan -no-color -input=false
+       continue-on-error: true   
+       
+  TerraformApply:
+     name: TerraformApply
+     runs-on: ubuntu-latest
+     needs: az-login-terraform-init-plan
+     steps:
+      - name: Checkout
+        uses: actions/checkout@v5.0.0
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: 6ce57f3b-b49b-47d0-b4d5-4d065ee8c696
+          tenant-id: b24a5be3-6852-43c6-b00e-086d16b535ab
+          subscription-id: 258a8e61-bb4a-4a2e-99d2-ca7211e4a421
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+        working-directory: ./env/dev
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: ./env/dev
+        run: terraform apply --auto-approve
+    
+          
+  
+         
+ 
